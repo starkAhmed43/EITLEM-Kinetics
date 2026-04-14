@@ -158,12 +158,21 @@ def main():
     parser.add_argument("--metric", type=str, default="rmse")
     parser.add_argument("--eval_split", type=str, default="val")
     parser.add_argument("--n_trials", type=int, required=True)
+    parser.add_argument(
+        "--trials_per_gpu",
+        type=int,
+        default=1,
+        help="Number of concurrent Optuna worker processes to launch per GPU.",
+    )
     parser.add_argument("--sampler_seed", type=int, default=42)
     parser.add_argument("--study_name", type=str, default="eitlem_optuna")
     parser.add_argument("--storage", type=str, required=True)
     parser.add_argument("--reset_storage", action="store_true")
     parser.add_argument("--stagger_seconds", type=float, default=3.0)
     args = parser.parse_args()
+
+    if args.trials_per_gpu <= 0:
+        raise ValueError("--trials_per_gpu must be a positive integer")
 
     args.thresholds = args.thresholds or ([args.threshold] if args.threshold else None)
     maybe_cache_embeddings(args)
@@ -176,31 +185,44 @@ def main():
         sampler=optuna.samplers.TPESampler(seed=args.sampler_seed),
     )
 
-    worker_trial_counts = split_trials(args.n_trials, len(args.gpus))
+    gpu_worker_slots = []
+    for gpu_id in args.gpus:
+        for slot_index in range(args.trials_per_gpu):
+            gpu_worker_slots.append((str(gpu_id), slot_index))
+
+    worker_trial_counts = split_trials(args.n_trials, len(gpu_worker_slots))
     processes = []
     try:
-        for worker_index, (gpu_id, worker_trials) in enumerate(zip(args.gpus, worker_trial_counts)):
+        for worker_index, ((gpu_id, slot_index), worker_trials) in enumerate(zip(gpu_worker_slots, worker_trial_counts)):
             if worker_trials <= 0:
                 continue
             env = os.environ.copy()
             env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
             cmd = worker_cmd(args, worker_trials, worker_index)
-            print("Launching Optuna worker %s on GPU %s for %s trials" % (worker_index, gpu_id, worker_trials), flush=True)
+            print(
+                "Launching Optuna worker %s on GPU %s slot %s for %s trials"
+                % (worker_index, gpu_id, slot_index, worker_trials),
+                flush=True,
+            )
             proc = subprocess.Popen(cmd, cwd=str(REPO_ROOT), env=env)
-            processes.append((gpu_id, worker_trials, proc))
-            if worker_index < len(args.gpus) - 1 and args.stagger_seconds > 0:
+            processes.append((gpu_id, slot_index, worker_trials, proc))
+            if worker_index < len(gpu_worker_slots) - 1 and args.stagger_seconds > 0:
                 time.sleep(args.stagger_seconds)
 
         failed = False
-        for gpu_id, worker_trials, proc in processes:
+        for gpu_id, slot_index, worker_trials, proc in processes:
             return_code = proc.wait()
             if return_code != 0:
                 failed = True
-                print("Worker on GPU %s failed after %s trials with exit code %s" % (gpu_id, worker_trials, return_code), flush=True)
+                print(
+                    "Worker on GPU %s slot %s failed after %s trials with exit code %s"
+                    % (gpu_id, slot_index, worker_trials, return_code),
+                    flush=True,
+                )
         if failed:
             raise RuntimeError("One or more parallel Optuna workers failed.")
     finally:
-        for _gpu_id, _worker_trials, proc in processes:
+        for _gpu_id, _slot_index, _worker_trials, proc in processes:
             if proc.poll() is None:
                 proc.terminate()
 

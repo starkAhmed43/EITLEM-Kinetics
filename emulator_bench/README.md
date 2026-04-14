@@ -64,6 +64,18 @@ Benchmark and tuning scripts:
 - `launch_parallel_optuna.py`: launches multiple single-GPU Optuna workers against one shared study
 - `launch_parallel_retrain_from_optuna.py`: retrains many split jobs in parallel across multiple GPUs from the best Optuna result
 
+Parallel Optuna note:
+
+- `launch_parallel_optuna.py` supports `--trials_per_gpu` for multiple concurrent workers per GPU
+- Example: `--gpus 0 1 --trials_per_gpu 3` launches 6 Optuna workers at once against the same shared study
+- `--n_trials` remains the total trial budget across all workers, not per worker
+
+Parallel retrain note:
+
+- `launch_parallel_retrain_from_optuna.py` also supports `--trials_per_gpu`
+- Example: `--gpus 0 1 --trials_per_gpu 2` lets 4 discovered retrain jobs run at once
+- The script first discovers jobs from the requested split groups and thresholds, then drains them across all GPU worker slots
+
 ## Enhancements In This Bench
 
 Compared with the original repo training flow, this bench adds:

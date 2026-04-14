@@ -215,7 +215,7 @@ def run_parallel(experiments, args, hparams):
     results = []
     result_lock = threading.Lock()
 
-    def worker(gpu_id):
+    def worker(gpu_id, slot_index):
         while True:
             try:
                 exp = work_queue.get_nowait()
@@ -223,10 +223,12 @@ def run_parallel(experiments, args, hparams):
                 return
             try:
                 result = run_experiment(exp, args, hparams, gpu_id)
+                result["slot_index"] = int(slot_index)
             except Exception as exc:
                 result = {
                     "status": "failed",
                     "gpu_id": str(gpu_id),
+                    "slot_index": int(slot_index),
                     "run_dir": str(exp["run_dir"]),
                     "split_group": exp["split_group"],
                     "split_name": exp["split_name"],
@@ -240,9 +242,10 @@ def run_parallel(experiments, args, hparams):
 
     threads = []
     for gpu_id in args.gpus:
-        thread = threading.Thread(target=worker, args=(str(gpu_id),), daemon=True)
-        thread.start()
-        threads.append(thread)
+        for slot_index in range(args.trials_per_gpu):
+            thread = threading.Thread(target=worker, args=(str(gpu_id), slot_index), daemon=True)
+            thread.start()
+            threads.append(thread)
     for thread in threads:
         thread.join()
     return results
@@ -251,6 +254,12 @@ def run_parallel(experiments, args, hparams):
 def main():
     parser = argparse.ArgumentParser(description="Retrain all requested EITLEM split jobs in parallel from the best Optuna hyperparameters.")
     parser.add_argument("--gpus", nargs="+", required=True)
+    parser.add_argument(
+        "--trials_per_gpu",
+        type=int,
+        default=1,
+        help="Number of concurrent retrain worker threads to launch per GPU.",
+    )
     parser.add_argument("--base_dir", type=str, default=str(DEFAULT_BASE_DIR))
     parser.add_argument("--embeddings_dir", type=str, default=str(DEFAULT_EMBEDDINGS_DIR))
     parser.add_argument("--output_root", type=str, default=None)
@@ -309,6 +318,9 @@ def main():
     parser.add_argument("--storage", type=str, default=None)
     parser.add_argument("--hparams_json", type=str, default=None)
     args = parser.parse_args()
+
+    if args.trials_per_gpu <= 0:
+        raise ValueError("--trials_per_gpu must be a positive integer")
 
     args.thresholds = normalize_threshold_args(args.thresholds, args.threshold)
     maybe_cache_embeddings(args)

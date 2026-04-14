@@ -77,28 +77,54 @@ python emulator_bench/tune_optuna.py \
   --storage sqlite:////home/da24s023/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/optuna_studies/eitlem_km_enz_0.09.db
 
 # 6. Launch parallel Optuna workers across multiple GPUs
+# This example launches 3 concurrent workers on each GPU, so 6 workers total.
 python emulator_bench/launch_parallel_optuna.py \
   --gpus 0 1 \
+  --trials_per_gpu 3 \
   --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
   --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
   --split_groups enzyme_sequence_splits \
-  --threshold threshold_0.3 \
+  --threshold threshold_0.09 \
   --predictor_type km \
   --mol_type MACCSKeys \
   --device cuda:0 \
   --cache_device cuda:0 \
   --metric rmse \
   --eval_split val \
-  --epochs 40 \
+  --epochs 25 \
   --n_trials 30 \
-  --num_workers 8 \
+  --num_workers 4 \
   --persistent_workers \
   --pin_memory \
-  --storage sqlite:///~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/optuna_studies/eitlem_optuna_parallel.db
+  --batch_size 256 \
+  --storage sqlite:////home/da24s023/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/optuna_studies/eitlem_km_enz_0.09.db
+
+python emulator_bench/launch_parallel_optuna.py \
+  --gpus 0 1 \
+  --trials_per_gpu 3 \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups substrate_splits \
+  --threshold threshold_0.45 \
+  --predictor_type km \
+  --mol_type MACCSKeys \
+  --device cuda:0 \
+  --cache_device cuda:0 \
+  --metric rmse \
+  --eval_split val \
+  --epochs 25 \
+  --n_trials 30 \
+  --num_workers 4 \
+  --persistent_workers \
+  --pin_memory \
+  --batch_size 256 \
+  --storage sqlite:////home/da24s023/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/optuna_studies/eitlem_km_sub_0.45.db
 
 # 7. Retrain all discovered jobs in parallel from the best Optuna result
+# This example launches 2 concurrent retrain workers per GPU, so 4 runs can train at once.
 python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --gpus 0 1 \
+  --trials_per_gpu 2 \
   --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
   --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
   --split_groups random_splits enzyme_sequence_splits substrate_splits \
