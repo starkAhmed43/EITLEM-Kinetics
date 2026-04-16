@@ -271,8 +271,8 @@ python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --persistent_workers \
   --pin_memory \
   --epochs 100 \
-  --patience 0 \ \
-  --val_every 1
+  --patience 0 \
+  --val_every 1 \
   --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_kcat_original.json
 
 python emulator_bench/launch_parallel_retrain_from_optuna.py \
@@ -290,6 +290,6 @@ python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --persistent_workers \
   --pin_memory \
   --epochs 100 \
-  --patience 0 \ \
-  --val_every 1
+  --patience 0 \
+  --val_every 1 \
   --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_km_original.json

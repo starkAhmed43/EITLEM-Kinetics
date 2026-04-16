@@ -151,6 +151,8 @@ def train_command(exp, args, hparams, device):
         str(hparams["patience"]),
         "--min_delta",
         str(hparams["min_delta"]),
+        "--val_every",
+        str(args.val_every),
         "--device",
         device,
         "--num_workers",
@@ -313,6 +315,7 @@ def main():
     parser.add_argument("--clip_grad", type=float, default=None)
     parser.add_argument("--patience", type=int, default=None)
     parser.add_argument("--min_delta", type=float, default=None)
+    parser.add_argument("--val_every", type=int, default=2)
     parser.add_argument("--amsgrad", action="store_true")
     parser.add_argument("--study_name", type=str, default="eitlem_optuna")
     parser.add_argument("--storage", type=str, default=None)
