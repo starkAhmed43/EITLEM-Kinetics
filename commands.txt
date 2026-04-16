@@ -148,3 +148,148 @@ python emulator_bench/predict_single_target.py \
   --batch_size 128 \
   --num_workers 8 \
   --pin_memory
+
+# 9. Original default settings snapshots from the upstream training code
+# KCAT defaults: emulator_bench/default_hparams_kcat_original.json
+# KM defaults:   emulator_bench/default_hparams_km_original.json
+
+# 10. Retrain 3 seeds with original KCAT settings
+python emulator_bench/run_split_benchmarks.py \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups random_splits enzyme_sequence_splits substrate_splits \
+  --predictor_type kcat \
+  --mol_type MACCSKeys \
+  --radius 4 \
+  --nbits 1024 \
+  --hidden_dim 512 \
+  --protein_dim 1280 \
+  --layer 10 \
+  --dropout 0.5 \
+  --att_layer 10 \
+  --device cuda:0 \
+  --cache_device cuda:0 \
+  --seeds 42 123 666 \
+  --batch_size 200 \
+  --epochs 100 \
+  --lr 1e-3 \
+  --weight_decay 0.0 \
+  --scheduler multistep \
+  --multistep_milestones 50 80 \
+  --multistep_gamma 0.9 \
+  --patience 0 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --val_every 1
+
+# 11. Retrain 3 seeds with original KM settings
+python emulator_bench/run_split_benchmarks.py \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups random_splits enzyme_sequence_splits substrate_splits \
+  --predictor_type km \
+  --mol_type MACCSKeys \
+  --radius 4 \
+  --nbits 1024 \
+  --hidden_dim 512 \
+  --protein_dim 1280 \
+  --layer 10 \
+  --dropout 0.5 \
+  --att_layer 10 \
+  --device cuda:0 \
+  --cache_device cuda:0 \
+  --seeds 42 123 666 \
+  --batch_size 200 \
+  --epochs 100 \
+  --lr 1e-3 \
+  --weight_decay 0.0 \
+  --scheduler multistep \
+  --multistep_milestones 50 80 \
+  --multistep_gamma 0.9 \
+  --patience 0 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --val_every 1
+
+# 12. Parallel retrain 3 seeds with original KCAT settings across multiple GPUs
+# This uses the original-settings JSON directly instead of loading hparams from an Optuna study.
+# With 2 GPUs and trials_per_gpu=2, up to 4 retrain jobs run at once.
+python emulator_bench/launch_parallel_retrain_from_optuna.py \
+  --gpus 0 1 \
+  --trials_per_gpu 2 \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups random_splits enzyme_sequence_splits substrate_splits \
+  --predictor_type kcat \
+  --mol_type MACCSKeys \
+  --device cuda:0 \
+  --seeds 42 123 666 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --epochs 100 \
+  --patience 0 \
+  --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_kcat_original.json
+
+# 13. Parallel retrain 3 seeds with original KM settings across multiple GPUs
+python emulator_bench/launch_parallel_retrain_from_optuna.py \
+  --gpus 0 1 \
+  --trials_per_gpu 2 \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups random_splits enzyme_sequence_splits substrate_splits \
+  --predictor_type km \
+  --mol_type MACCSKeys \
+  --device cuda:0 \
+  --seeds 42 123 666 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --epochs 100 \
+  --patience 0 \
+  --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_km_original.json
+
+# 14. Parallel retrain only enzyme-sequence jobs with original KM settings
+python emulator_bench/launch_parallel_retrain_from_optuna.py \
+  --gpus 0 \
+  --trials_per_gpu 3 \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kcat \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups enzyme_sequence_splits substrate_splits enzyme_structure_splits conformer_cosine_splits random_splits uniprot_time_splits \
+  --predictor_type kcat \
+  --mol_type MACCSKeys \
+  --device cuda:0 \
+  --seeds 41 42 43 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --epochs 100 \
+  --patience 0 \ \
+  --val_every 1
+  --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_kcat_original.json
+
+python emulator_bench/launch_parallel_retrain_from_optuna.py \
+  --gpus 1 \
+  --trials_per_gpu 3 \
+  --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Km \
+  --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
+  --split_groups enzyme_sequence_splits substrate_splits enzyme_structure_splits conformer_cosine_splits random_splits uniprot_time_splits \
+  --predictor_type km \
+  --mol_type MACCSKeys \
+  --device cuda:0 \
+  --seeds 41 42 43 \
+  --num_workers 4 \
+  --prefetch_factor 5 \
+  --persistent_workers \
+  --pin_memory \
+  --epochs 100 \
+  --patience 0 \ \
+  --val_every 1
+  --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_km_original.json

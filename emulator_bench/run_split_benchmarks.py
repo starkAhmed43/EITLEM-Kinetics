@@ -83,6 +83,8 @@ def maybe_load_hparams(args):
         "eps",
         "amsgrad",
         "scheduler",
+        "multistep_milestones",
+        "multistep_gamma",
         "lr_decay_factor",
         "lr_decay_patience",
         "min_lr",
@@ -157,6 +159,10 @@ def train_one(job, seed, args):
         str(args.eps),
         "--scheduler",
         args.scheduler,
+        "--multistep_milestones",
+        *[str(value) for value in args.multistep_milestones],
+        "--multistep_gamma",
+        str(args.multistep_gamma),
         "--lr_decay_factor",
         str(args.lr_decay_factor),
         "--lr_decay_patience",
@@ -240,7 +246,9 @@ def main():
     parser.add_argument("--beta2", type=float, default=0.999)
     parser.add_argument("--eps", type=float, default=1e-8)
     parser.add_argument("--amsgrad", action="store_true")
-    parser.add_argument("--scheduler", choices=["none", "cosine", "plateau"], default="cosine")
+    parser.add_argument("--scheduler", choices=["none", "multistep", "cosine", "plateau"], default="cosine")
+    parser.add_argument("--multistep_milestones", nargs="+", type=int, default=[50, 80])
+    parser.add_argument("--multistep_gamma", type=float, default=0.9)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
     parser.add_argument("--lr_decay_patience", type=int, default=5)
     parser.add_argument("--min_lr", type=float, default=1e-6)
