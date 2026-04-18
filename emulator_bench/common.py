@@ -178,22 +178,30 @@ def discover_split_jobs(
         if not group_dir.exists():
             continue
 
-        if split_group in {"random_splits", "group_shuffle_splits"}:
-            train_path = _find_split_file(group_dir, "train")
-            val_path = _find_split_file(group_dir, "val")
-            test_path = _find_split_file(group_dir, "test")
-            if train_path and val_path and test_path:
-                jobs.append(
-                    {
-                        "split_group": split_group,
-                        "split_name": "random" if split_group == "random_splits" else "group_shuffle",
-                        "difficulty": "random" if split_group == "random_splits" else "group_shuffle",
-                        "root_dir": str(group_dir),
-                        "train_path": str(train_path),
-                        "val_path": str(val_path),
-                        "test_path": str(test_path),
-                    }
-                )
+        train_path = _find_split_file(group_dir, "train")
+        val_path = _find_split_file(group_dir, "val")
+        test_path = _find_split_file(group_dir, "test")
+        if train_path and val_path and test_path:
+            if split_group == "random_splits":
+                split_name = "random"
+                difficulty = "random"
+            elif split_group == "group_shuffle_splits":
+                split_name = "group_shuffle"
+                difficulty = "group_shuffle"
+            else:
+                split_name = split_group
+                difficulty = split_group
+            jobs.append(
+                {
+                    "split_group": split_group,
+                    "split_name": split_name,
+                    "difficulty": difficulty,
+                    "root_dir": str(group_dir),
+                    "train_path": str(train_path),
+                    "val_path": str(val_path),
+                    "test_path": str(test_path),
+                }
+            )
             continue
 
         candidate_dirs = []
