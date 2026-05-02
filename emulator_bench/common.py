@@ -24,12 +24,17 @@ DEFAULT_MODEL_NAME = "EITLEM-Kinetics"
 DEFAULT_BASE_DIR = Path(f"/home/mallikarjun/github/EMULaToR/data/processed/baselines/{DEFAULT_MODEL_NAME}")
 DEFAULT_EMBEDDINGS_DIR = DEFAULT_BASE_DIR / "embeddings"
 DEFAULT_SPLIT_GROUPS = [
-    "random_splits",
+    "random_splits_grouped_sequence",
+    "random_splits_grouped_smiles",
     "enzyme_sequence_splits",
     "substrate_splits",
     "group_shuffle_splits",
 ]
 DEFAULT_RESULTS_DIRNAME = "eitlem_results"
+
+
+def _is_grouped_random_split(split_group: str) -> bool:
+    return split_group.startswith("random_splits_grouped_")
 
 
 def stable_hash(text: str) -> str:
@@ -182,9 +187,9 @@ def discover_split_jobs(
         val_path = _find_split_file(group_dir, "val")
         test_path = _find_split_file(group_dir, "test")
         if train_path and val_path and test_path:
-            if split_group == "random_splits":
-                split_name = "random"
-                difficulty = "random"
+            if _is_grouped_random_split(split_group):
+                split_name = split_group
+                difficulty = split_group
             elif split_group == "group_shuffle_splits":
                 split_name = "group_shuffle"
                 difficulty = "group_shuffle"
@@ -237,12 +242,13 @@ def discover_split_jobs(
 
 
 def resolve_single_split_job(base_dir: Path, split_group: str, threshold: Optional[str] = None) -> Dict[str, str]:
-    threshold_filter = None if split_group in {"random_splits", "group_shuffle_splits"} else normalize_threshold_args(threshold=threshold)
+    no_threshold = _is_grouped_random_split(split_group) or split_group == "group_shuffle_splits"
+    threshold_filter = None if no_threshold else normalize_threshold_args(threshold=threshold)
     jobs = discover_split_jobs(base_dir, split_groups=[split_group], thresholds=threshold_filter)
     if not jobs:
         detail = f"{split_group}/{threshold}" if threshold else split_group
         raise FileNotFoundError(f"No split job discovered for {detail} in {base_dir}")
-    if split_group in {"random_splits", "group_shuffle_splits"}:
+    if no_threshold:
         return jobs[0]
     if threshold is None:
         available = ", ".join(job["split_name"] for job in jobs)

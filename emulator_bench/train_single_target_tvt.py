@@ -408,7 +408,7 @@ def main():
         }
 
         val_metrics = None
-        if epoch % args.val_every == 0 or epoch == args.epochs:
+        if (args.val_every > 0 and epoch % args.val_every == 0) or epoch == args.epochs:
             _val_true, _val_pred, val_metrics = evaluate_loader(
                 model,
                 val_loader,

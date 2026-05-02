@@ -258,10 +258,10 @@ python emulator_bench/launch_parallel_retrain_from_optuna.py \
 # 14. Parallel retrain only enzyme-sequence jobs with original KM settings
 python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --gpus 0 \
-  --trials_per_gpu 3 \
+  --trials_per_gpu 2 \
   --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kcat \
   --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
-  --split_groups enzyme_sequence_splits substrate_splits enzyme_structure_splits conformer_cosine_splits random_splits uniprot_time_splits \
+  --split_groups random_splits_grouped_smiles random_splits_grouped_sequence  \
   --predictor_type kcat \
   --mol_type MACCSKeys \
   --device cuda:0 \
@@ -272,15 +272,15 @@ python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --pin_memory \
   --epochs 100 \
   --patience 0 \
-  --val_every 1 \
+  --val_every 0 \
   --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_kcat_original.json
 
 python emulator_bench/launch_parallel_retrain_from_optuna.py \
-  --gpus 1 \
-  --trials_per_gpu 3 \
+  --gpus 0 \
+  --trials_per_gpu 2 \
   --base_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Km \
   --embeddings_dir ~/github/EMULaToR/data/processed/baselines/EITLEM-Kinetics/embeddings \
-  --split_groups enzyme_sequence_splits substrate_splits enzyme_structure_splits conformer_cosine_splits random_splits uniprot_time_splits \
+  --split_groups random_splits \
   --predictor_type km \
   --mol_type MACCSKeys \
   --device cuda:0 \
@@ -291,5 +291,5 @@ python emulator_bench/launch_parallel_retrain_from_optuna.py \
   --pin_memory \
   --epochs 100 \
   --patience 0 \
-  --val_every 1 \
+  --val_every 0 \
   --hparams_json ~/github/EITLEM-Kinetics/emulator_bench/default_hparams_km_original.json
