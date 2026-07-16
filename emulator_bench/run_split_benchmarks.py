@@ -5,7 +5,13 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from tqdm.auto import tqdm
+try:
+    from src.utils.rich_progress import progress, write
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    from src.utils.rich_progress import progress, write
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -282,7 +288,7 @@ def main():
         raise FileNotFoundError(f"No split jobs found in {args.base_dir}")
 
     summary_rows = []
-    for job in tqdm(jobs, desc="Benchmark jobs", unit="job"):
+    for job in progress(jobs, desc="Benchmark jobs", unit="job"):
         for seed in args.seeds:
             out_dir = train_one(job, seed, args)
             test_metrics = pd.read_csv(out_dir / "final_results_test.csv").iloc[0].to_dict()

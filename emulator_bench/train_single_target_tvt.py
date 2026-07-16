@@ -10,7 +10,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from tqdm.auto import tqdm
+try:
+    from src.utils.rich_progress import progress, write
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    from src.utils.rich_progress import progress, write
 
 import sys
 
@@ -142,7 +148,7 @@ def evaluate_loader(model, loader, device, autocast_dtype=None, desc="Evaluation
     total_loss = 0.0
     total_samples = 0
     loss_fn = torch.nn.MSELoss(reduction="mean")
-    iterator = tqdm(loader, desc=desc, unit="batch", leave=False) if show_progress else loader
+    iterator = progress(loader, desc=desc, unit="batch", leave=False) if show_progress else loader
     with torch.no_grad():
         for batch in iterator:
             batch = _prepare_batch(batch, device)
@@ -172,7 +178,7 @@ def train_one_epoch(model, loader, optimizer, device, scaler, autocast_dtype=Non
     loss_fn = torch.nn.MSELoss(reduction="mean")
     total_loss = 0.0
     total_samples = 0
-    iterator = tqdm(loader, desc=desc, unit="batch", leave=False)
+    iterator = progress(loader, desc=desc, unit="batch", leave=False)
     for batch in iterator:
         batch = _prepare_batch(batch, device)
         optimizer.zero_grad(set_to_none=True)
@@ -388,7 +394,7 @@ def main():
     else:
         print(f"Device: {device} | precision: {precision_mode}", flush=True)
 
-    for epoch in tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch"):
+    for epoch in progress(range(1, args.epochs + 1), desc="Training", unit="epoch"):
         train_metrics = train_one_epoch(
             model,
             train_loader,
